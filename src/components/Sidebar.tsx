@@ -1,4 +1,5 @@
 import { useFileStore } from "../stores/fileStore";
+import { useConfigStore } from "../stores/configStore";
 import { useUiStore } from "../stores/uiStore";
 import { useEditorStore } from "../stores/editorStore";
 import { FileTree } from "./FileTree";
@@ -14,6 +15,17 @@ export function Sidebar() {
   const setCurrentDoc = useEditorStore((s) => s.setCurrentDoc);
   const addRecent = useFileStore((s) => s.addRecent);
   const setFileTree = useFileStore((s) => s.setFileTree);
+  const fileExtensions = useConfigStore((s) => s.fileExtensions);
+
+  const refreshTree = useCallback(async () => {
+    if (!workspaceDir) return;
+    try {
+      const root = await api.listDir(workspaceDir, fileExtensions);
+      setFileTree(root);
+    } catch (e) {
+      console.error("Failed to list directory:", e);
+    }
+  }, [workspaceDir, fileExtensions, setFileTree]);
 
   const handleSelect = useCallback(
     async (path: string) => {
@@ -35,13 +47,12 @@ export function Sidebar() {
       if (!name || !workspaceDir) return;
       try {
         await api.createFile(parentDir, name);
-        const tree = await api.listDir(workspaceDir);
-        setFileTree(tree);
+        await refreshTree();
       } catch (e) {
         console.error("Failed to create file:", e);
       }
     },
-    [workspaceDir, setFileTree],
+    [workspaceDir, refreshTree],
   );
 
   const handleRename = useCallback(
@@ -50,13 +61,12 @@ export function Sidebar() {
       if (!newName || !workspaceDir) return;
       try {
         await api.renameFile(oldPath, newName);
-        const tree = await api.listDir(workspaceDir);
-        setFileTree(tree);
+        await refreshTree();
       } catch (e) {
         console.error("Failed to rename:", e);
       }
     },
-    [workspaceDir, setFileTree],
+    [workspaceDir, refreshTree],
   );
 
   const handleDelete = useCallback(
@@ -64,8 +74,7 @@ export function Sidebar() {
       if (!confirm(`Delete ${path}?`)) return;
       try {
         await api.deleteFile(path);
-        const tree = await api.listDir(workspaceDir!);
-        setFileTree(tree);
+        await refreshTree();
         if (activeFilePath === path) {
           useEditorStore.getState().clearDoc();
         }
@@ -73,7 +82,7 @@ export function Sidebar() {
         console.error("Failed to delete:", e);
       }
     },
-    [workspaceDir, activeFilePath, setFileTree],
+    [workspaceDir, activeFilePath, refreshTree],
   );
 
   if (!sidebarOpen || !workspaceDir) return null;
@@ -92,7 +101,7 @@ export function Sidebar() {
       </div>
       <div className="flex-1 overflow-y-auto">
         <FileTree
-          files={fileTree}
+          files={fileTree?.children ?? []}
           activePath={activeFilePath}
           onSelect={handleSelect}
           onCreate={handleCreate}

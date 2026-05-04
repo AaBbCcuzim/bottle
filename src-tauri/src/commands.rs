@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use tauri::command;
+use tauri::Manager;
 use crate::search::{SearchManager, SearchResult};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -10,6 +11,20 @@ pub struct FileEntry {
     pub name: String,
     pub path: String,
     pub is_dir: bool,
+    pub children: Vec<FileEntry>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AppConfig {
+    pub file_extensions: Vec<String>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            file_extensions: vec!["md".to_string()],
+        }
+    }
 }
 
 static SEARCH_MANAGER: OnceLock<SearchManager> = OnceLock::new();
@@ -28,20 +43,62 @@ pub fn save_file(path: String, content: String) -> Result<(), String> {
 }
 
 #[command]
-pub fn list_dir(path: String) -> Result<Vec<FileEntry>, String> {
-    let entries = fs::read_dir(&path).map_err(|e| e.to_string())?;
+pub fn list_dir(path: String, extensions: Vec<String>) -> Result<FileEntry, String> {
+    let root = PathBuf::from(&path);
+    let name = root
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.clone());
+
+    let children = list_dir_recursive(&root, &extensions)?;
+
+    Ok(FileEntry {
+        name,
+        path,
+        is_dir: true,
+        children,
+    })
+}
+
+fn list_dir_recursive(dir: &PathBuf, extensions: &[String]) -> Result<Vec<FileEntry>, String> {
+    let entries = fs::read_dir(dir).map_err(|e| e.to_string())?;
     let mut result = Vec::new();
+
     for entry in entries {
         let entry = entry.map_err(|e| e.to_string())?;
         let name = entry.file_name().to_string_lossy().to_string();
+
+        // Skip hidden files/directories
+        if name.starts_with('.') {
+            continue;
+        }
+
         let entry_path = entry.path();
-        let is_dir = entry_path.is_dir();
-        result.push(FileEntry {
-            name,
-            path: entry_path.to_string_lossy().to_string(),
-            is_dir,
-        });
+
+        if entry_path.is_dir() {
+            let children = list_dir_recursive(&entry_path, extensions)?;
+            // Only include non-empty directories (that have matching files)
+            if !children.is_empty() {
+                result.push(FileEntry {
+                    name,
+                    path: entry_path.to_string_lossy().to_string(),
+                    is_dir: true,
+                    children,
+                });
+            }
+        } else if let Some(ext) = entry_path.extension() {
+            let ext_str = ext.to_string_lossy().to_lowercase();
+            if extensions.is_empty() || extensions.contains(&ext_str) {
+                result.push(FileEntry {
+                    name,
+                    path: entry_path.to_string_lossy().to_string(),
+                    is_dir: false,
+                    children: Vec::new(),
+                });
+            }
+        }
     }
+
     result.sort_by(|a, b| {
         if a.is_dir != b.is_dir {
             b.is_dir.cmp(&a.is_dir)
@@ -49,6 +106,7 @@ pub fn list_dir(path: String) -> Result<Vec<FileEntry>, String> {
             a.name.to_lowercase().cmp(&b.name.to_lowercase())
         }
     });
+
     Ok(result)
 }
 
@@ -125,6 +183,31 @@ pub fn index_file(dir: String, file_path: String, content: String) -> Result<(),
     get_search().index_file(&dir, &file_path, &content)
 }
 
+#[command]
+pub fn get_config(app: tauri::AppHandle) -> Result<AppConfig, String> {
+    let config_path = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("config.json");
+
+    if !config_path.exists() {
+        return Ok(AppConfig::default());
+    }
+
+    let content = fs::read_to_string(&config_path).map_err(|e| e.to_string())?;
+    serde_json::from_str(&content).map_err(|e| e.to_string())
+}
+
+#[command]
+pub fn set_config(app: tauri::AppHandle, config: AppConfig) -> Result<(), String> {
+    let config_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
+    let config_path = config_dir.join("config.json");
+    let content = serde_json::to_string_pretty(&config).map_err(|e| e.to_string())?;
+    fs::write(&config_path, &content).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -153,11 +236,71 @@ mod tests {
     fn test_list_dir() {
         let dir = TempDir::new().unwrap();
         fs::write(dir.path().join("a.md"), "").unwrap();
-        fs::create_dir(dir.path().join("sub")).unwrap();
-        let result = list_dir(dir.path().to_string_lossy().to_string()).unwrap();
-        assert_eq!(result.len(), 2);
-        assert!(result[0].is_dir);
-        assert!(!result[1].is_dir);
+        let sub = dir.path().join("sub");
+        fs::create_dir(&sub).unwrap();
+        fs::write(sub.join("b.md"), "").unwrap();
+
+        let result = list_dir(
+            dir.path().to_string_lossy().to_string(),
+            vec!["md".to_string()],
+        )
+        .unwrap();
+
+        assert!(result.is_dir);
+        assert_eq!(result.children.len(), 2); // sub dir + a.md
+        // First should be dir (sorted: dirs first)
+        assert!(result.children[0].is_dir);
+        assert_eq!(result.children[0].children.len(), 1);
+        assert!(!result.children[1].is_dir);
+    }
+
+    #[test]
+    fn test_list_dir_filters_extensions() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("a.md"), "").unwrap();
+        fs::write(dir.path().join("b.txt"), "").unwrap();
+        fs::write(dir.path().join("c.png"), "").unwrap();
+
+        let result = list_dir(
+            dir.path().to_string_lossy().to_string(),
+            vec!["md".to_string()],
+        )
+        .unwrap();
+
+        assert_eq!(result.children.len(), 1);
+        assert_eq!(result.children[0].name, "a.md");
+    }
+
+    #[test]
+    fn test_list_dir_empty_extensions_shows_all() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("a.md"), "").unwrap();
+        fs::write(dir.path().join("b.txt"), "").unwrap();
+
+        let result = list_dir(
+            dir.path().to_string_lossy().to_string(),
+            Vec::<String>::new(),
+        )
+        .unwrap();
+
+        assert_eq!(result.children.len(), 2);
+    }
+
+    #[test]
+    fn test_list_dir_skips_hidden() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join(".hidden.md"), "").unwrap();
+        fs::write(dir.path().join("visible.md"), "").unwrap();
+        fs::create_dir(dir.path().join(".git")).unwrap();
+
+        let result = list_dir(
+            dir.path().to_string_lossy().to_string(),
+            vec!["md".to_string()],
+        )
+        .unwrap();
+
+        assert_eq!(result.children.len(), 1);
+        assert_eq!(result.children[0].name, "visible.md");
     }
 
     #[test]
@@ -166,7 +309,8 @@ mod tests {
         let path = create_file(
             dir.path().to_string_lossy().to_string(),
             "new.md".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         assert!(PathBuf::from(&path).exists());
     }
 
@@ -178,7 +322,8 @@ mod tests {
         let new_path = rename_file(
             file.to_string_lossy().to_string(),
             "new.md".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         assert!(new_path.ends_with("new.md"));
         assert!(!file.exists());
     }
@@ -190,7 +335,8 @@ mod tests {
             vec![1, 2, 3],
             "test.png".to_string(),
             dir.path().to_string_lossy().to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(result, "./images/test.png");
         let saved_path = dir.path().join("images").join("test.png");
         assert!(saved_path.exists());
@@ -203,7 +349,8 @@ mod tests {
         export_html(
             "# Hello".to_string(),
             dest.to_string_lossy().to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         let content = fs::read_to_string(&dest).unwrap();
         assert!(content.contains("<h1>Hello</h1>"));
     }

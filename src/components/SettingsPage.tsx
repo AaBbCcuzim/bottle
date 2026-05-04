@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { useUiStore } from "../stores/uiStore";
 import { useEditorStore } from "../stores/editorStore";
+import { useConfigStore } from "../stores/configStore";
 import type { ThemeMode, EditMode } from "../types";
 
-type Category = "appearance" | "editor" | "shortcuts" | "tools";
+type Category = "appearance" | "editor" | "files" | "shortcuts" | "tools";
 
 const categories: { id: Category; label: string }[] = [
   { id: "appearance", label: "外观" },
   { id: "editor", label: "编辑器" },
+  { id: "files", label: "文件" },
   { id: "shortcuts", label: "快捷键" },
   { id: "tools", label: "工具" },
 ];
@@ -87,6 +89,53 @@ function EditorPanel() {
   );
 }
 
+function FilesPanel() {
+  const fileExtensions = useConfigStore((s) => s.fileExtensions);
+  const setFileExtensions = useConfigStore((s) => s.setFileExtensions);
+  const [inputValue, setInputValue] = useState(fileExtensions.join(", "));
+
+  const handleSave = () => {
+    const exts = inputValue
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    setFileExtensions(exts);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSave();
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-sm font-medium mb-1">侧边栏文件扩展名</h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          侧边栏只显示指定扩展名的文件，用逗号分隔。留空则显示所有文件。
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="md, txt, md"
+            className="flex-1 px-3 py-1.5 text-sm rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button
+            onClick={handleSave}
+            className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90"
+          >
+            应用
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ToolsPanel() {
   const setPage = useUiStore((s) => s.setPage);
   const setActiveModal = useUiStore((s) => s.setActiveModal);
@@ -150,6 +199,7 @@ function ShortcutsPanel() {
 const panelMap: Record<Category, () => React.ReactNode> = {
   appearance: AppearancePanel,
   editor: EditorPanel,
+  files: FilesPanel,
   shortcuts: ShortcutsPanel,
   tools: ToolsPanel,
 };

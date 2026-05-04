@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { FileEntry, SearchResult } from "./types";
+import type { FileEntry, AppConfig, SearchResult } from "./types";
 
 export const api = {
   openFile: (path: string): Promise<string> =>
@@ -8,8 +8,8 @@ export const api = {
   saveFile: (path: string, content: string): Promise<void> =>
     invoke("save_file", { path, content }),
 
-  listDir: (path: string): Promise<FileEntry[]> =>
-    invoke("list_dir", { path }),
+  listDir: (path: string, extensions: string[]): Promise<FileEntry> =>
+    invoke("list_dir", { path, extensions }),
 
   createFile: (parentDir: string, name: string): Promise<string> =>
     invoke("create_file", { parentDir, name }),
@@ -38,4 +38,10 @@ export const api = {
 
   exportPdf: (markdown: string, destPath: string): Promise<void> =>
     invoke("export_pdf", { markdown, destPath }),
+
+  getConfig: (): Promise<AppConfig> =>
+    invoke("get_config"),
+
+  setConfig: (config: AppConfig): Promise<void> =>
+    invoke("set_config", { config }),
 };

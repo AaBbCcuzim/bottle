@@ -2,6 +2,11 @@ export interface FileEntry {
   name: string;
   path: string;
   is_dir: boolean;
+  children: FileEntry[];
+}
+
+export interface AppConfig {
+  file_extensions: string[];
 }
 
 export type EditMode = "source" | "split" | "wysiwyg";

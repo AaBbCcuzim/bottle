@@ -8,6 +8,7 @@ import { SearchModal } from "./components/SearchModal";
 import { SettingsPage } from "./components/SettingsPage";
 import { Titlebar } from "./components/Titlebar";
 import { useFileStore } from "./stores/fileStore";
+import { useConfigStore } from "./stores/configStore";
 import { useEditorStore } from "./stores/editorStore";
 import { useUiStore } from "./stores/uiStore";
 import { confirm } from "@tauri-apps/plugin-dialog";
@@ -24,6 +25,8 @@ function App() {
   const currentDoc = useEditorStore((s) => s.currentDoc);
   const setPage = useUiStore((s) => s.setPage);
   const setPlatform = useUiStore((s) => s.setPlatform);
+  const loadConfig = useConfigStore((s) => s.loadConfig);
+  const fileExtensions = useConfigStore((s) => s.fileExtensions);
 
   // Initialize platform on mount
   useEffect(() => {
@@ -31,6 +34,18 @@ function App() {
       setPlatform(p as "macos" | "windows" | "linux" | "unknown");
     });
   }, []);
+
+  // Load persisted config on mount
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
+
+  // Refresh file tree when extensions change and workspace is open
+  const workspaceDir = useFileStore((s) => s.workspaceDir);
+  useEffect(() => {
+    if (!workspaceDir) return;
+    api.listDir(workspaceDir, fileExtensions).then(setFileTree).catch(console.error);
+  }, [fileExtensions, workspaceDir, setFileTree]);
 
   // macOS native menu: add Settings... to app menu
   useEffect(() => {
@@ -86,7 +101,7 @@ function App() {
     const path = typeof dir === "string" ? dir : dir;
     setWorkspace(path);
     try {
-      const tree = await api.listDir(path);
+      const tree = await api.listDir(path, fileExtensions);
       setFileTree(tree);
     } catch (e) {
       console.error("Failed to open folder:", e);
