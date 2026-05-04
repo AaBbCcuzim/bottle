@@ -6,10 +6,15 @@ import { Editor } from "./components/Editor";
 import { OutlineModal } from "./components/OutlineModal";
 import { SearchModal } from "./components/SearchModal";
 import { SettingsPage } from "./components/SettingsPage";
+import { Titlebar } from "./components/Titlebar";
 import { useFileStore } from "./stores/fileStore";
 import { useEditorStore } from "./stores/editorStore";
 import { useUiStore } from "./stores/uiStore";
+import { confirm } from "@tauri-apps/plugin-dialog";
 import { open, save } from "@tauri-apps/plugin-dialog";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { Menu, MenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu";
 import { api } from "./api";
 import { useEffect } from "react";
 
@@ -18,6 +23,62 @@ function App() {
   const setFileTree = useFileStore((s) => s.setFileTree);
   const currentDoc = useEditorStore((s) => s.currentDoc);
   const setPage = useUiStore((s) => s.setPage);
+  const setPlatform = useUiStore((s) => s.setPlatform);
+
+  // Initialize platform on mount
+  useEffect(() => {
+    invoke<string>("get_platform").then((p) => {
+      setPlatform(p as "macos" | "windows" | "linux" | "unknown");
+    });
+  }, []);
+
+  // macOS native menu: add Settings... to app menu
+  useEffect(() => {
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (!isTauri) return;
+
+    const setupMenu = async () => {
+      const menu = await Menu.default();
+      const items = await menu.items();
+      const appMenu = items[0];
+      if (!appMenu || !("append" in appMenu)) return;
+
+      await appMenu.append(
+        await PredefinedMenuItem.new({ item: "Separator" }),
+      );
+      await appMenu.append(
+        await MenuItem.new({
+          text: "Settings...",
+          accelerator: "Cmd+,",
+          action: () => useUiStore.getState().setPage("settings"),
+        }),
+      );
+      await menu.setAsAppMenu();
+    };
+
+    setupMenu();
+  }, []);
+
+  // Close handler with dirty document check
+  useEffect(() => {
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (!isTauri) return;
+
+    const unlisten = getCurrentWindow().onCloseRequested(async (event) => {
+      if (useEditorStore.getState().isDirty) {
+        const shouldClose = await confirm(
+          "You have unsaved changes. Close anyway?",
+          { title: "Unsaved Changes", kind: "warning" }
+        );
+        if (!shouldClose) {
+          event.preventDefault();
+        }
+      }
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   const handleOpenFolder = async () => {
     const dir = await open({ directory: true, multiple: false });
@@ -100,6 +161,9 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) return;
+
     const handler = (e: BeforeUnloadEvent) => {
       if (useEditorStore.getState().isDirty) {
         e.preventDefault();
@@ -113,6 +177,7 @@ function App() {
   return (
     <ThemeProvider>
       <div className="flex flex-col h-screen bg-background text-foreground">
+        <Titlebar />
         <Toolbar />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />

@@ -108,6 +108,18 @@ pub fn search_files(dir: String, query: String) -> Result<Vec<SearchResult>, Str
 }
 
 #[command]
+pub fn get_platform() -> String {
+    #[cfg(target_os = "macos")]
+    { "macos".to_string() }
+    #[cfg(target_os = "windows")]
+    { "windows".to_string() }
+    #[cfg(target_os = "linux")]
+    { "linux".to_string() }
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    { "unknown".to_string() }
+}
+
+#[command]
 pub fn index_file(dir: String, file_path: String, content: String) -> Result<(), String> {
     get_search().get_or_create(&dir)?;
     get_search().index_file(&dir, &file_path, &content)

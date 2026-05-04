@@ -18,7 +18,15 @@ pub fn run() {
             commands::index_file,
             commands::export_html,
             commands::export_pdf,
+            commands::get_platform,
         ])
+        .setup(|app| {
+            #[cfg(target_os = "windows")]
+            app.get_webview_window("main").expect("main window").set_decorations(false)?;
+            #[cfg(not(target_os = "windows"))]
+            let _ = app;
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

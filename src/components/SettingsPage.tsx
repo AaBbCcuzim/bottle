@@ -3,12 +3,13 @@ import { useUiStore } from "../stores/uiStore";
 import { useEditorStore } from "../stores/editorStore";
 import type { ThemeMode, EditMode } from "../types";
 
-type Category = "appearance" | "editor" | "shortcuts";
+type Category = "appearance" | "editor" | "shortcuts" | "tools";
 
 const categories: { id: Category; label: string }[] = [
   { id: "appearance", label: "外观" },
   { id: "editor", label: "编辑器" },
   { id: "shortcuts", label: "快捷键" },
+  { id: "tools", label: "工具" },
 ];
 
 const themes: { mode: ThemeMode; label: string }[] = [
@@ -86,6 +87,36 @@ function EditorPanel() {
   );
 }
 
+function ToolsPanel() {
+  const setPage = useUiStore((s) => s.setPage);
+  const setActiveModal = useUiStore((s) => s.setActiveModal);
+
+  const openTool = (modal: "outline" | "search") => {
+    setPage("editor");
+    setActiveModal(modal);
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-medium">快速操作</h3>
+      <div className="flex gap-3">
+        <button
+          onClick={() => openTool("outline")}
+          className="px-4 py-2 rounded-md border border-border hover:bg-muted text-sm transition-colors"
+        >
+          ☰ 文档大纲
+        </button>
+        <button
+          onClick={() => openTool("search")}
+          className="px-4 py-2 rounded-md border border-border hover:bg-muted text-sm transition-colors"
+        >
+          ⌕ 搜索文件
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ShortcutsPanel() {
   return (
     <div className="space-y-4">
@@ -120,6 +151,7 @@ const panelMap: Record<Category, () => React.ReactNode> = {
   appearance: AppearancePanel,
   editor: EditorPanel,
   shortcuts: ShortcutsPanel,
+  tools: ToolsPanel,
 };
 
 export function SettingsPage() {
