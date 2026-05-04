@@ -1,6 +1,11 @@
 import { useState } from "react";
 import type { FileEntry } from "../types";
 
+function displayName(name: string, isDir: boolean): string {
+  if (isDir) return name;
+  return name.replace(/\.md$/i, "");
+}
+
 interface FileTreeProps {
   files: FileEntry[];
   activePath: string | null;
@@ -38,8 +43,7 @@ export function FileTree({
                 <span className="text-xs w-3 shrink-0">
                   {expanded[file.path] ? "▾" : "▸"}
                 </span>
-                <span className="shrink-0">📁</span>
-                <span className="truncate">{file.name}</span>
+                <span className="truncate">{displayName(file.name, true)}</span>
               </button>
               {expanded[file.path] && file.children.length > 0 && (
                 <FileTree
@@ -70,8 +74,7 @@ export function FileTree({
               style={{ paddingLeft: `${12 + depth * 16}px` }}
             >
               <span className="text-xs w-3 shrink-0" />
-              <span className="shrink-0">📄</span>
-              <span className="truncate">{file.name}</span>
+              <span className="truncate">{displayName(file.name, false)}</span>
             </button>
           )}
         </div>
