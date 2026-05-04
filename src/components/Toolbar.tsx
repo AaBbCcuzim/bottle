@@ -58,6 +58,14 @@ export function Toolbar() {
       >
         ⌕
       </button>
+
+      <button
+        title="Settings"
+        onClick={() => useUiStore.getState().setPage("settings")}
+        className="p-1.5 rounded hover:bg-muted text-sm"
+      >
+        ⚙
+      </button>
     </div>
   );
 }

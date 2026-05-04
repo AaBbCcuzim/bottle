@@ -5,7 +5,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Editor } from "./components/Editor";
 import { OutlineModal } from "./components/OutlineModal";
 import { SearchModal } from "./components/SearchModal";
-import { SettingsModal } from "./components/SettingsModal";
+import { SettingsPage } from "./components/SettingsPage";
 import { useFileStore } from "./stores/fileStore";
 import { useEditorStore } from "./stores/editorStore";
 import { useUiStore } from "./stores/uiStore";
@@ -17,6 +17,8 @@ function App() {
   const setWorkspace = useFileStore((s) => s.setWorkspace);
   const setFileTree = useFileStore((s) => s.setFileTree);
   const currentDoc = useEditorStore((s) => s.currentDoc);
+  const page = useUiStore((s) => s.page);
+  const setPage = useUiStore((s) => s.setPage);
 
   const handleOpenFolder = async () => {
     const dir = await open({ directory: true, multiple: false });
@@ -87,7 +89,7 @@ function App() {
       }
       if (mod && e.key === ",") {
         e.preventDefault();
-        useUiStore.getState().setActiveModal("settings");
+        setPage("settings");
       }
       if (mod && e.shiftKey && e.key === "F") {
         e.preventDefault();
@@ -115,8 +117,10 @@ function App() {
         <Toolbar />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-            {currentDoc ? (
+          <main className="flex-1 flex flex-col items-center justify-center text-muted-foreground overflow-hidden">
+            {page === "settings" ? (
+              <SettingsPage />
+            ) : currentDoc ? (
               <Editor />
             ) : (
               <div className="flex flex-col gap-3 items-center">
@@ -143,7 +147,6 @@ function App() {
       </div>
       <OutlineModal />
       <SearchModal />
-      <SettingsModal />
     </ThemeProvider>
   );
 }
