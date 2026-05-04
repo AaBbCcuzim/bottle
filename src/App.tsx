@@ -2,6 +2,7 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import { Toolbar } from "./components/Toolbar";
 import { StatusBar } from "./components/StatusBar";
 import { Sidebar } from "./components/Sidebar";
+import { Editor } from "./components/Editor";
 import { useFileStore } from "./stores/fileStore";
 import { useEditorStore } from "./stores/editorStore";
 import { api } from "./api";
@@ -60,9 +61,7 @@ function App() {
           <Sidebar />
           <main className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
             {currentDoc ? (
-              <div className="w-full h-full p-4 font-mono text-sm whitespace-pre-wrap overflow-auto">
-                {currentDoc}
-              </div>
+              <Editor />
             ) : (
               <div className="flex flex-col gap-3 items-center">
                 <p className="text-lg">Markdown Editor</p>
