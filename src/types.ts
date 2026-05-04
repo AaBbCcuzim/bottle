@@ -7,6 +7,7 @@ export interface FileEntry {
 export type EditMode = "source" | "split" | "wysiwyg";
 export type ThemeMode = "light" | "dark" | "system";
 export type ActiveModal = "outline" | "search" | "settings" | null;
+export type Platform = "macos" | "windows" | "linux" | "unknown";
 
 export interface SearchResult {
   file_path: string;

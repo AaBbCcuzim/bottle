@@ -1,71 +1,23 @@
-import { useEditorStore } from "../stores/editorStore";
+import { useCallback } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useUiStore } from "../stores/uiStore";
-import type { EditMode } from "../types";
-
-const modes: { mode: EditMode; label: string }[] = [
-  { mode: "source", label: "Source" },
-  { mode: "split", label: "Split" },
-  { mode: "wysiwyg", label: "WYSIWYG" },
-];
 
 export function Toolbar() {
-  const editMode = useEditorStore((s) => s.editMode);
-  const setEditMode = useEditorStore((s) => s.setEditMode);
-  const theme = useUiStore((s) => s.theme);
-  const setTheme = useUiStore((s) => s.setTheme);
-  const setActiveModal = useUiStore((s) => s.setActiveModal);
+  const platform = useUiStore((s) => s.platform);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (platform !== "macos") return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, input, select, textarea, a")) return;
+    getCurrentWindow().startDragging();
+  }, [platform]);
+
+  if (platform !== "macos") return null;
 
   return (
-    <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border bg-muted/30">
-      <div className="flex rounded-md border border-border overflow-hidden">
-        {modes.map(({ mode, label }) => (
-          <button
-            key={mode}
-            onClick={() => setEditMode(mode)}
-            className={`px-2.5 py-1 text-xs font-medium transition-colors ${
-              editMode === mode
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex-1" />
-
-      <button
-        title="Toggle theme"
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        className="p-1.5 rounded hover:bg-muted text-sm"
-      >
-        {theme === "dark" ? "☀" : "☾"}
-      </button>
-
-      <button
-        title="Outline"
-        onClick={() => setActiveModal("outline")}
-        className="p-1.5 rounded hover:bg-muted text-sm"
-      >
-        ☰
-      </button>
-
-      <button
-        title="Search"
-        onClick={() => setActiveModal("search")}
-        className="p-1.5 rounded hover:bg-muted text-sm"
-      >
-        ⌕
-      </button>
-
-      <button
-        title="Settings"
-        onClick={() => useUiStore.getState().setPage("settings")}
-        className="p-1.5 rounded hover:bg-muted text-sm"
-      >
-        ⚙
-      </button>
-    </div>
+    <div
+      className="h-[28px] shrink-0 select-none flex items-center pl-[72px] pr-2"
+      onMouseDown={handleMouseDown}
+    />
   );
 }
