@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use tauri::command;
+use crate::search::{SearchManager, SearchResult};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FileEntry {
@@ -10,11 +12,9 @@ pub struct FileEntry {
     pub is_dir: bool,
 }
 
-#[derive(Debug, Serialize, Clone)]
-pub struct SearchResult {
-    pub file_path: String,
-    pub snippet: String,
-    pub line_number: u32,
+static SEARCH_MANAGER: OnceLock<SearchManager> = OnceLock::new();
+fn get_search() -> &'static SearchManager {
+    SEARCH_MANAGER.get_or_init(SearchManager::new)
 }
 
 #[command]
@@ -103,8 +103,14 @@ fn markdown_to_html(md: &str) -> String {
 }
 
 #[command]
-pub fn search_files(_dir: String, _query: String) -> Result<Vec<SearchResult>, String> {
-    Err("Search not yet implemented".to_string())
+pub fn search_files(dir: String, query: String) -> Result<Vec<SearchResult>, String> {
+    get_search().search(&dir, &query)
+}
+
+#[command]
+pub fn index_file(dir: String, file_path: String, content: String) -> Result<(), String> {
+    get_search().get_or_create(&dir)?;
+    get_search().index_file(&dir, &file_path, &content)
 }
 
 #[cfg(test)]

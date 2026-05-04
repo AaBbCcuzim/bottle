@@ -30,6 +30,9 @@ export const api = {
   searchFiles: (dir: string, query: string): Promise<SearchResult[]> =>
     invoke("search_files", { dir, query }),
 
+  indexFile: (dir: string, filePath: string, content: string): Promise<void> =>
+    invoke("index_file", { dir, filePath, content }),
+
   exportHtml: (markdown: string, destPath: string): Promise<void> =>
     invoke("export_html", { markdown, destPath }),
 

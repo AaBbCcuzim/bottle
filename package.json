@@ -18,6 +18,7 @@
     "@milkdown/plugin-upload": "^7.20.0",
     "@milkdown/theme-nord": "^7.20.0",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-opener": "^2",
     "clsx": "^2.1.1",
     "katex": "^0.16.45",

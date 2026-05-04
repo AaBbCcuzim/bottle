@@ -9,6 +9,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { useFileStore } from "./stores/fileStore";
 import { useEditorStore } from "./stores/editorStore";
 import { useUiStore } from "./stores/uiStore";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { api } from "./api";
 import { useEffect } from "react";
 
@@ -18,11 +19,12 @@ function App() {
   const currentDoc = useEditorStore((s) => s.currentDoc);
 
   const handleOpenFolder = async () => {
-    const dir = prompt("Enter workspace folder path:");
+    const dir = await open({ directory: true, multiple: false });
     if (!dir) return;
-    setWorkspace(dir);
+    const path = typeof dir === "string" ? dir : dir;
+    setWorkspace(path);
     try {
-      const tree = await api.listDir(dir);
+      const tree = await api.listDir(path);
       setFileTree(tree);
     } catch (e) {
       console.error("Failed to open folder:", e);
@@ -30,16 +32,46 @@ function App() {
   };
 
   const handleOpenFile = async () => {
-    const path = prompt("Enter file path:");
+    const path = await open({
+      filters: [{ name: "Markdown", extensions: ["md"] }],
+      multiple: false,
+    });
     if (!path) return;
+    const p = typeof path === "string" ? path : path;
     try {
-      const content = await api.openFile(path);
-      useEditorStore.getState().setCurrentDoc(content, path);
-      useFileStore.getState().addRecent(path);
+      const content = await api.openFile(p);
+      useEditorStore.getState().setCurrentDoc(content, p);
+      useFileStore.getState().addRecent(p);
     } catch (e) {
       console.error("Failed to open file:", e);
     }
   };
+
+  const saveCurrentFile = async () => {
+    const { currentDoc, currentFilePath, markClean } =
+      useEditorStore.getState();
+    if (!currentFilePath) {
+      const dest = await save({
+        filters: [{ name: "Markdown", extensions: ["md"] }],
+      });
+      if (!dest) return;
+      useEditorStore.getState().setCurrentDoc(currentDoc, dest as string);
+    }
+    const fp = useEditorStore.getState().currentFilePath!;
+    const md = useEditorStore.getState().currentDoc;
+    await api.saveFile(fp, md);
+    markClean();
+  };
+
+  const handleExportHtml = async () => {
+    const { currentDoc } = useEditorStore.getState();
+    const dest = await save({
+      filters: [{ name: "HTML", extensions: ["html"] }],
+    });
+    if (!dest) return;
+    await api.exportHtml(currentDoc, dest as string);
+  };
+  void handleExportHtml;
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -47,18 +79,34 @@ function App() {
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key === "s") {
         e.preventDefault();
-        const { currentDoc, currentFilePath, markClean } = useEditorStore.getState();
-        if (currentFilePath) {
-          api.saveFile(currentFilePath, currentDoc).then(() => markClean());
-        }
+        saveCurrentFile();
+      }
+      if (mod && e.key === "o" && !e.shiftKey) {
+        e.preventDefault();
+        handleOpenFile();
       }
       if (mod && e.key === ",") {
         e.preventDefault();
         useUiStore.getState().setActiveModal("settings");
       }
+      if (mod && e.shiftKey && e.key === "F") {
+        e.preventDefault();
+        useUiStore.getState().setActiveModal("search");
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (useEditorStore.getState().isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
   return (
