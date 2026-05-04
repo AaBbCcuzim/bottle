@@ -3,8 +3,12 @@ import { Toolbar } from "./components/Toolbar";
 import { StatusBar } from "./components/StatusBar";
 import { Sidebar } from "./components/Sidebar";
 import { Editor } from "./components/Editor";
+import { OutlineModal } from "./components/OutlineModal";
+import { SearchModal } from "./components/SearchModal";
+import { SettingsModal } from "./components/SettingsModal";
 import { useFileStore } from "./stores/fileStore";
 import { useEditorStore } from "./stores/editorStore";
+import { useUiStore } from "./stores/uiStore";
 import { api } from "./api";
 import { useEffect } from "react";
 
@@ -48,6 +52,10 @@ function App() {
           api.saveFile(currentFilePath, currentDoc).then(() => markClean());
         }
       }
+      if (mod && e.key === ",") {
+        e.preventDefault();
+        useUiStore.getState().setActiveModal("settings");
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -85,6 +93,9 @@ function App() {
         </div>
         <StatusBar />
       </div>
+      <OutlineModal />
+      <SearchModal />
+      <SettingsModal />
     </ThemeProvider>
   );
 }
