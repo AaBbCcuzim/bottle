@@ -1,0 +1,15 @@
+export interface FileEntry {
+  name: string;
+  path: string;
+  is_dir: boolean;
+}
+
+export type EditMode = "source" | "split" | "wysiwyg";
+export type ThemeMode = "light" | "dark" | "system";
+export type ActiveModal = "outline" | "search" | "settings" | null;
+
+export interface SearchResult {
+  file_path: string;
+  snippet: string;
+  line_number: number;
+}
