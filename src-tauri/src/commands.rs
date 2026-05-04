@@ -10,6 +10,13 @@ pub struct FileEntry {
     pub is_dir: bool,
 }
 
+#[derive(Debug, Serialize, Clone)]
+pub struct SearchResult {
+    pub file_path: String,
+    pub snippet: String,
+    pub line_number: u32,
+}
+
 #[command]
 pub fn open_file(path: String) -> Result<String, String> {
     fs::read_to_string(&path).map_err(|e| e.to_string())
@@ -66,23 +73,38 @@ pub fn delete_file(path: String) -> Result<(), String> {
 }
 
 #[command]
-pub fn save_image(_path: String, _data: String) -> Result<String, String> {
-    Err("not implemented yet".to_string())
+pub fn save_image(data: Vec<u8>, filename: String, workspace_dir: String) -> Result<String, String> {
+    let images_dir = PathBuf::from(&workspace_dir).join("images");
+    fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
+    let filepath = images_dir.join(&filename);
+    fs::write(&filepath, &data).map_err(|e| e.to_string())?;
+    Ok(format!("./images/{}", filename))
 }
 
 #[command]
-pub fn search_files(_query: String) -> Result<Vec<String>, String> {
-    Err("not implemented yet".to_string())
+pub fn export_html(markdown: String, dest_path: String) -> Result<(), String> {
+    let mut html = String::from("<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n");
+    html.push_str("<title>Export</title>\n</head>\n<body>\n");
+    html.push_str(&markdown_to_html(&markdown));
+    html.push_str("\n</body>\n</html>");
+    fs::write(&dest_path, &html).map_err(|e| e.to_string())
 }
 
 #[command]
-pub fn export_html(_path: String) -> Result<String, String> {
-    Err("not implemented yet".to_string())
+pub fn export_pdf(_markdown: String, _dest_path: String) -> Result<(), String> {
+    Err("PDF export not yet implemented".to_string())
+}
+
+fn markdown_to_html(md: &str) -> String {
+    use comrak::{markdown_to_html_with_plugins, ComrakOptions, ComrakPlugins};
+    let options = ComrakOptions::default();
+    let plugins = ComrakPlugins::default();
+    markdown_to_html_with_plugins(md, &options, &plugins)
 }
 
 #[command]
-pub fn export_pdf(_path: String) -> Result<String, String> {
-    Err("not implemented yet".to_string())
+pub fn search_files(_dir: String, _query: String) -> Result<Vec<SearchResult>, String> {
+    Err("Search not yet implemented".to_string())
 }
 
 #[cfg(test)]
@@ -141,5 +163,30 @@ mod tests {
         ).unwrap();
         assert!(new_path.ends_with("new.md"));
         assert!(!file.exists());
+    }
+
+    #[test]
+    fn test_save_image() {
+        let dir = TempDir::new().unwrap();
+        let result = save_image(
+            vec![1, 2, 3],
+            "test.png".to_string(),
+            dir.path().to_string_lossy().to_string(),
+        ).unwrap();
+        assert_eq!(result, "./images/test.png");
+        let saved_path = dir.path().join("images").join("test.png");
+        assert!(saved_path.exists());
+    }
+
+    #[test]
+    fn test_export_html() {
+        let dir = TempDir::new().unwrap();
+        let dest = dir.path().join("out.html");
+        export_html(
+            "# Hello".to_string(),
+            dest.to_string_lossy().to_string(),
+        ).unwrap();
+        let content = fs::read_to_string(&dest).unwrap();
+        assert!(content.contains("<h1>Hello</h1>"));
     }
 }
