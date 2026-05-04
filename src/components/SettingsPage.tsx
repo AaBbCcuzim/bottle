@@ -94,12 +94,8 @@ function ShortcutsPanel() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-muted/50">
-              <th className="text-left px-4 py-2 font-medium text-muted-foreground">
-                操作
-              </th>
-              <th className="text-left px-4 py-2 font-medium text-muted-foreground">
-                快捷键
-              </th>
+              <th className="text-left px-4 py-2 font-medium text-muted-foreground">操作</th>
+              <th className="text-left px-4 py-2 font-medium text-muted-foreground">快捷键</th>
             </tr>
           </thead>
           <tbody>
@@ -128,43 +124,54 @@ const panelMap: Record<Category, () => React.ReactNode> = {
 
 export function SettingsPage() {
   const [active, setActive] = useState<Category>("appearance");
+  const page = useUiStore((s) => s.page);
   const setPage = useUiStore((s) => s.setPage);
+
+  if (page !== "settings") return null;
 
   const Panel = panelMap[active];
 
   return (
-    <div className="flex h-full">
-      <nav className="w-44 border-r border-border shrink-0 py-3">
-        <div className="px-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          设置
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="fixed inset-0 bg-black/40"
+        onClick={() => setPage("editor")}
+      />
+      <div className="relative z-10 w-[42rem] h-[28rem] flex rounded-xl border border-border bg-background shadow-2xl overflow-hidden">
+        <nav className="w-40 border-r border-border shrink-0 py-4 bg-muted/10">
+          <div className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            设置
+          </div>
+          {categories.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setActive(id)}
+              className={`w-full text-left px-4 py-1.5 text-sm transition-colors ${
+                active === id
+                  ? "bg-muted text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-3 border-b border-border">
+            <h2 className="text-sm font-semibold">
+              {categories.find((c) => c.id === active)?.label}
+            </h2>
+            <button
+              onClick={() => setPage("editor")}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            <Panel />
+          </div>
         </div>
-        {categories.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => setActive(id)}
-            className={`w-full text-left px-3 py-1.5 text-sm rounded-r-md transition-colors ${
-              active === id
-                ? "bg-muted text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        <div className="border-t border-border mt-3 pt-3 px-3">
-          <button
-            onClick={() => setPage("editor")}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            ← 返回编辑器
-          </button>
-        </div>
-      </nav>
-      <div className="flex-1 overflow-y-auto p-8">
-        <h2 className="text-lg font-semibold mb-6">
-          {categories.find((c) => c.id === active)?.label}
-        </h2>
-        <Panel />
       </div>
     </div>
   );

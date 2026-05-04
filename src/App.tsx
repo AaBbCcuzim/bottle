@@ -17,7 +17,6 @@ function App() {
   const setWorkspace = useFileStore((s) => s.setWorkspace);
   const setFileTree = useFileStore((s) => s.setFileTree);
   const currentDoc = useEditorStore((s) => s.currentDoc);
-  const page = useUiStore((s) => s.page);
   const setPage = useUiStore((s) => s.setPage);
 
   const handleOpenFolder = async () => {
@@ -118,9 +117,7 @@ function App() {
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
           <main className="flex-1 flex flex-col items-center justify-center text-muted-foreground overflow-hidden">
-            {page === "settings" ? (
-              <SettingsPage />
-            ) : currentDoc ? (
+            {currentDoc ? (
               <Editor />
             ) : (
               <div className="flex flex-col gap-3 items-center">
@@ -147,6 +144,7 @@ function App() {
       </div>
       <OutlineModal />
       <SearchModal />
+      <SettingsPage />
     </ThemeProvider>
   );
 }
