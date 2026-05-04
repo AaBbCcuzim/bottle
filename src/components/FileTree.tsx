@@ -1,9 +1,15 @@
 import { useState } from "react";
 import type { FileEntry } from "../types";
 
+function displayName(name: string, isDir: boolean): string {
+  if (isDir) return name;
+  return name.replace(/\.md$/i, "");
+}
+
 interface FileTreeProps {
   files: FileEntry[];
   activePath: string | null;
+  depth?: number;
   onSelect: (path: string) => void;
   onCreate: (parentDir: string) => void;
   onRename: (oldPath: string) => void;
@@ -13,7 +19,11 @@ interface FileTreeProps {
 export function FileTree({
   files,
   activePath,
+  depth = 0,
   onSelect,
+  onCreate,
+  onRename,
+  onDelete,
 }: FileTreeProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -28,15 +38,30 @@ export function FileTree({
                   setExpanded((e) => ({ ...e, [file.path]: !e[file.path] }))
                 }
                 className="flex items-center gap-1 w-full px-3 py-1 text-sm hover:bg-muted text-left"
+                style={{ paddingLeft: `${12 + depth * 16}px` }}
               >
-                <span className="text-xs w-3">
+                <span className="text-xs w-3 shrink-0">
                   {expanded[file.path] ? "▾" : "▸"}
                 </span>
-                <span>📁 {file.name}</span>
+                <span className="truncate">{displayName(file.name, true)}</span>
               </button>
-              {expanded[file.path] && (
-                <div className="text-xs text-muted-foreground px-5 py-0.5">
-                  (expandable in future)
+              {expanded[file.path] && file.children.length > 0 && (
+                <FileTree
+                  files={file.children}
+                  activePath={activePath}
+                  depth={depth + 1}
+                  onSelect={onSelect}
+                  onCreate={onCreate}
+                  onRename={onRename}
+                  onDelete={onDelete}
+                />
+              )}
+              {expanded[file.path] && file.children.length === 0 && (
+                <div
+                  className="text-xs text-muted-foreground px-3 py-0.5 italic"
+                  style={{ paddingLeft: `${28 + depth * 16}px` }}
+                >
+                  (empty)
                 </div>
               )}
             </>
@@ -46,9 +71,10 @@ export function FileTree({
               className={`flex items-center gap-1 w-full px-3 py-1 text-sm hover:bg-muted text-left ${
                 activePath === file.path ? "bg-muted" : ""
               }`}
+              style={{ paddingLeft: `${12 + depth * 16}px` }}
             >
-              <span className="text-xs w-3" />
-              <span>📄 {file.name}</span>
+              <span className="text-xs w-3 shrink-0" />
+              <span className="truncate">{displayName(file.name, false)}</span>
             </button>
           )}
         </div>

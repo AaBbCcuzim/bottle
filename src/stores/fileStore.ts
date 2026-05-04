@@ -2,11 +2,11 @@ import { create } from "zustand";
 import type { FileEntry } from "../types";
 
 interface FileState {
-  fileTree: FileEntry[];
+  fileTree: FileEntry | null;
   activeFilePath: string | null;
   workspaceDir: string | null;
   openRecent: string[];
-  setFileTree: (tree: FileEntry[]) => void;
+  setFileTree: (tree: FileEntry | null) => void;
   setActiveFile: (path: string | null) => void;
   setWorkspace: (dir: string) => void;
   closeWorkspace: () => void;
@@ -14,7 +14,7 @@ interface FileState {
 }
 
 export const useFileStore = create<FileState>((set) => ({
-  fileTree: [],
+  fileTree: null,
   activeFilePath: null,
   workspaceDir: null,
   openRecent: [],
@@ -22,7 +22,7 @@ export const useFileStore = create<FileState>((set) => ({
   setActiveFile: (path) => set({ activeFilePath: path }),
   setWorkspace: (dir) => set({ workspaceDir: dir }),
   closeWorkspace: () =>
-    set({ fileTree: [], activeFilePath: null, workspaceDir: null }),
+    set({ fileTree: null, activeFilePath: null, workspaceDir: null }),
   addRecent: (path) =>
     set((s) => {
       const filtered = s.openRecent.filter((p) => p !== path);

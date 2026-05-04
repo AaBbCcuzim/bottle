@@ -8,15 +8,17 @@ import { SearchModal } from "./components/SearchModal";
 import { SettingsPage } from "./components/SettingsPage";
 import { Titlebar } from "./components/Titlebar";
 import { useFileStore } from "./stores/fileStore";
+import { useConfigStore } from "./stores/configStore";
 import { useEditorStore } from "./stores/editorStore";
 import { useUiStore } from "./stores/uiStore";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
-import { Menu, MenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu";
+import { Menu, Submenu, MenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu";
+import { PanelLeft } from "lucide-react";
 import { api } from "./api";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function App() {
   const setWorkspace = useFileStore((s) => s.setWorkspace);
@@ -24,6 +26,13 @@ function App() {
   const currentDoc = useEditorStore((s) => s.currentDoc);
   const setPage = useUiStore((s) => s.setPage);
   const setPlatform = useUiStore((s) => s.setPlatform);
+  const loadConfig = useConfigStore((s) => s.loadConfig);
+  const fileExtensions = useConfigStore((s) => s.fileExtensions);
+  const activeFilePath = useFileStore((s) => s.activeFilePath);
+  const sidebarOpen = useUiStore((s) => s.sidebarOpen);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const [sidebarWidth, setSidebarWidth] = useState(224);
+  const dragging = useRef(false);
 
   // Initialize platform on mount
   useEffect(() => {
@@ -32,27 +41,92 @@ function App() {
     });
   }, []);
 
-  // macOS native menu: add Settings... to app menu
+  // Load persisted config on mount
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
+
+  // Refresh file tree when extensions change and workspace is open
+  const workspaceDir = useFileStore((s) => s.workspaceDir);
+  useEffect(() => {
+    if (!workspaceDir) return;
+    api.listDir(workspaceDir, fileExtensions).then(setFileTree).catch(console.error);
+  }, [fileExtensions, workspaceDir, setFileTree]);
+
+  // macOS native menu: custom menu bar
   useEffect(() => {
     const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
     if (!isTauri) return;
 
     const setupMenu = async () => {
-      const menu = await Menu.default();
-      const items = await menu.items();
-      const appMenu = items[0];
-      if (!appMenu || !("append" in appMenu)) return;
+      const appSub = await Submenu.new({
+        text: "Bottle",
+        items: [
+          await PredefinedMenuItem.new({ item: "Separator" }),
+          await PredefinedMenuItem.new({ item: "Services" }),
+          await PredefinedMenuItem.new({ item: "Separator" }),
+          await PredefinedMenuItem.new({ item: "Hide" }),
+          await PredefinedMenuItem.new({ item: "HideOthers" }),
+          await PredefinedMenuItem.new({ item: "ShowAll" }),
+          await PredefinedMenuItem.new({ item: "Separator" }),
+          await MenuItem.new({
+            text: "Settings...",
+            accelerator: "Cmd+,",
+            action: () => useUiStore.getState().setPage("settings"),
+          }),
+          await PredefinedMenuItem.new({ item: "Separator" }),
+          await PredefinedMenuItem.new({ item: "Quit" }),
+        ],
+      });
 
-      await appMenu.append(
-        await PredefinedMenuItem.new({ item: "Separator" }),
-      );
-      await appMenu.append(
-        await MenuItem.new({
-          text: "Settings...",
-          accelerator: "Cmd+,",
-          action: () => useUiStore.getState().setPage("settings"),
-        }),
-      );
+      const fileSub = await Submenu.new({
+        text: "File",
+        items: [
+          await MenuItem.new({
+            text: "Open File",
+            accelerator: "Cmd+O",
+            action: handleOpenFile,
+          }),
+          await MenuItem.new({
+            text: "Open Folder...",
+            action: handleOpenFolder,
+          }),
+        ],
+      });
+
+      const editSub = await Submenu.new({
+        text: "Edit",
+        items: [
+          await PredefinedMenuItem.new({ item: "Undo" }),
+          await PredefinedMenuItem.new({ item: "Redo" }),
+          await PredefinedMenuItem.new({ item: "Separator" }),
+          await PredefinedMenuItem.new({ item: "Cut" }),
+          await PredefinedMenuItem.new({ item: "Copy" }),
+          await PredefinedMenuItem.new({ item: "Paste" }),
+          await PredefinedMenuItem.new({ item: "SelectAll" }),
+        ],
+      });
+
+      const viewSub = await Submenu.new({
+        text: "View",
+        items: [
+          await PredefinedMenuItem.new({ item: "Fullscreen" }),
+        ],
+      });
+
+      const windowSub = await Submenu.new({
+        text: "Window",
+        items: [
+          await PredefinedMenuItem.new({ item: "Minimize" }),
+          await PredefinedMenuItem.new({ item: "Separator" }),
+          await PredefinedMenuItem.new({ item: "CloseWindow" }),
+        ],
+      });
+
+      const menu = await Menu.new({
+        items: [appSub, fileSub, editSub, viewSub, windowSub],
+      });
+
       await menu.setAsAppMenu();
     };
 
@@ -86,7 +160,7 @@ function App() {
     const path = typeof dir === "string" ? dir : dir;
     setWorkspace(path);
     try {
-      const tree = await api.listDir(path);
+      const tree = await api.listDir(path, useConfigStore.getState().fileExtensions);
       setFileTree(tree);
     } catch (e) {
       console.error("Failed to open folder:", e);
@@ -174,16 +248,58 @@ function App() {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
+  // Sidebar resize
+  const handleMouseDown = useCallback(() => {
+    dragging.current = true;
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      setSidebarWidth(Math.max(160, Math.min(480, e.clientX)));
+    };
+    const handleMouseUp = () => {
+      dragging.current = false;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   return (
     <ThemeProvider>
       <div className="flex flex-col h-screen bg-background text-foreground">
         <Titlebar />
         <Toolbar />
         <div className="flex flex-1 overflow-hidden">
-          <Sidebar />
-          <main className="flex-1 flex flex-col items-center justify-center text-muted-foreground overflow-hidden">
+          {sidebarOpen && workspaceDir && (
+            <>
+              <div style={{ width: sidebarWidth }} className="shrink-0">
+                <Sidebar />
+              </div>
+              <div
+                className="w-0.5 shrink-0 cursor-col-resize relative
+                  before:absolute before:inset-y-0 before:-left-1 before:right-1"
+                onMouseDown={handleMouseDown}
+              />
+            </>
+          )}
+          <main className="flex-1 flex flex-col text-muted-foreground overflow-hidden relative">
+            {!sidebarOpen && workspaceDir && (
+              <button
+                title="Show sidebar"
+                onClick={toggleSidebar}
+                className="absolute top-2 left-2 z-10 p-1.5 rounded-md hover:bg-muted transition-colors"
+              >
+                <PanelLeft size={16} />
+              </button>
+            )}
+            <div className="flex-1 flex flex-col items-center justify-center">
             {currentDoc ? (
-              <Editor />
+              <Editor key={activeFilePath} />
             ) : (
               <div className="flex flex-col gap-3 items-center">
                 <p className="text-lg">Markdown Editor</p>
@@ -203,6 +319,7 @@ function App() {
                 </div>
               </div>
             )}
+            </div>
           </main>
         </div>
         <StatusBar />

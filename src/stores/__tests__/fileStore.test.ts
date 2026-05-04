@@ -6,10 +6,15 @@ vi.mock("../../api", () => ({
   api: {
     openFile: vi.fn().mockResolvedValue("# mock content"),
     saveFile: vi.fn().mockResolvedValue(undefined),
-    listDir: vi.fn().mockResolvedValue([
-      { name: "notes", path: "/ws/notes", is_dir: true },
-      { name: "readme.md", path: "/ws/readme.md", is_dir: false },
-    ]),
+    listDir: vi.fn().mockResolvedValue({
+      name: "ws",
+      path: "/ws",
+      is_dir: true,
+      children: [
+        { name: "notes", path: "/ws/notes", is_dir: true, children: [] },
+        { name: "readme.md", path: "/ws/readme.md", is_dir: false, children: [] },
+      ],
+    }),
     createFile: vi.fn().mockResolvedValue("/ws/new.md"),
     renameFile: vi.fn().mockResolvedValue("/ws/renamed.md"),
     deleteFile: vi.fn().mockResolvedValue(undefined),
@@ -19,7 +24,7 @@ vi.mock("../../api", () => ({
 describe("fileStore", () => {
   beforeEach(() => {
     useFileStore.setState({
-      fileTree: [],
+      fileTree: null,
       activeFilePath: null,
       workspaceDir: null,
       openRecent: [],
@@ -49,12 +54,17 @@ describe("fileStore", () => {
 
   it("clears file state on close workspace", () => {
     useFileStore.setState({
-      fileTree: [{ name: "a.md", path: "/a.md", is_dir: false }],
+      fileTree: {
+        name: "ws",
+        path: "/ws",
+        is_dir: true,
+        children: [{ name: "a.md", path: "/a.md", is_dir: false, children: [] }],
+      },
       activeFilePath: "/a.md",
     });
     useFileStore.getState().closeWorkspace();
     const s = useFileStore.getState();
-    expect(s.fileTree).toEqual([]);
+    expect(s.fileTree).toBeNull();
     expect(s.activeFilePath).toBeNull();
     expect(s.workspaceDir).toBeNull();
   });

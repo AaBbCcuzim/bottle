@@ -19,6 +19,8 @@ pub fn run() {
             commands::export_html,
             commands::export_pdf,
             commands::get_platform,
+            commands::get_config,
+            commands::set_config,
         ])
         .setup(|app| {
             #[cfg(target_os = "windows")]
