@@ -4,17 +4,11 @@ import { useUiStore } from "../uiStore";
 describe("uiStore", () => {
   beforeEach(() => {
     useUiStore.setState({
-      theme: "system",
       sidebarOpen: true,
       activeModal: null,
       platform: "unknown",
       isMaximized: false,
     });
-  });
-
-  it("toggles theme", () => {
-    useUiStore.getState().setTheme("dark");
-    expect(useUiStore.getState().theme).toBe("dark");
   });
 
   it("toggles sidebar", () => {

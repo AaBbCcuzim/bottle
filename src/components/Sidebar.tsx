@@ -4,9 +4,13 @@ import { useUiStore } from "../stores/uiStore";
 import { useEditorStore } from "../stores/editorStore";
 import { FileTree } from "./FileTree";
 import { api } from "../api";
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { confirm as tauriConfirm } from "@tauri-apps/plugin-dialog";
 import { Settings, Plus, PanelLeft } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 
 type PromptAction = { title: string; placeholder: string; onSubmit: (value: string) => void } | null;
 
@@ -20,8 +24,10 @@ export function Sidebar() {
   const addRecent = useFileStore((s) => s.addRecent);
   const setFileTree = useFileStore((s) => s.setFileTree);
   const fileExtensions = useConfigStore((s) => s.fileExtensions);
+  const { t } = useTranslation();
   const [promptAction, setPromptAction] = useState<PromptAction>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState("");
+  const navigate = useNavigate();
 
   const refreshTree = useCallback(async () => {
     if (!workspaceDir) return;
@@ -50,8 +56,8 @@ export function Sidebar() {
   const handleCreate = useCallback(
     (parentDir: string) => {
       setPromptAction({
-        title: "New File",
-        placeholder: "File name (e.g. note.md)",
+        title: t("newFile"),
+        placeholder: t("fileName"),
         onSubmit: async (name) => {
           if (!name || !workspaceDir) return;
           try {
@@ -108,20 +114,12 @@ export function Sidebar() {
     <aside className="w-full bg-muted/10 flex flex-col h-full border-r border-border">
       <div className="px-1 py-2 text-xs font-medium text-muted-foreground flex justify-end items-center">
         <div className="flex items-center gap-0.5">
-          <button
-            title="New file"
-            onClick={() => handleCreate(workspaceDir)}
-            className="hover:bg-muted rounded-md p-1.5"
-          >
+          <Button variant="ghost" size="icon" title={t("newFile")} onClick={() => handleCreate(workspaceDir)}>
             <Plus className="w-3.5 h-3.5" />
-          </button>
-          <button
-            title="Close sidebar"
-            onClick={() => useUiStore.getState().toggleSidebar()}
-            className="hover:bg-muted rounded-md p-1.5"
-          >
+          </Button>
+          <Button variant="ghost" size="icon" title={t("closeSidebar")} onClick={() => useUiStore.getState().toggleSidebar()}>
             <PanelLeft className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -135,13 +133,9 @@ export function Sidebar() {
         />
       </div>
       <div className="flex items-center justify-end px-1 py-1.5 text-muted-foreground">
-        <button
-          title="Settings"
-          onClick={() => useUiStore.getState().setPage("settings")}
-          className="hover:bg-muted rounded-md p-1.5 transition-colors"
-        >
+        <Button variant="ghost" size="icon" title={t("settings")} onClick={() => navigate({ to: "/settings" })}>
           <Settings className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {promptAction && (
@@ -155,38 +149,27 @@ export function Sidebar() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-sm font-medium mb-3">{promptAction.title}</h3>
-            <input
-              ref={inputRef}
+            <Input
               autoFocus
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary mb-3"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              className="mb-3"
               placeholder={promptAction.placeholder}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  promptAction.onSubmit((e.target as HTMLInputElement).value);
+                  promptAction.onSubmit(inputValue);
                   setPromptAction(null);
+                  setInputValue("");
                 }
                 if (e.key === "Escape") {
                   setPromptAction(null);
+                  setInputValue("");
                 }
               }}
             />
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setPromptAction(null)}
-                className="px-3 py-1 text-sm rounded-md hover:bg-muted transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const val = inputRef.current?.value ?? "";
-                  promptAction.onSubmit(val);
-                  setPromptAction(null);
-                }}
-                className="px-3 py-1 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-colors"
-              >
-                OK
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => { setPromptAction(null); setInputValue(""); }}>Cancel</Button>
+              <Button size="sm" onClick={() => { promptAction.onSubmit(inputValue); setPromptAction(null); setInputValue(""); }}>OK</Button>
             </div>
           </div>
         </div>

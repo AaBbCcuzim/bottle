@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { EditMode } from "../types";
 
 interface EditorState {
@@ -14,17 +15,25 @@ interface EditorState {
   clearDoc: () => void;
 }
 
-export const useEditorStore = create<EditorState>((set) => ({
-  currentDoc: "",
-  currentFilePath: null,
-  editMode: "wysiwyg",
-  isDirty: false,
-  setCurrentDoc: (doc, path) =>
-    set({ currentDoc: doc, currentFilePath: path, isDirty: false }),
-  updateDoc: (doc) => set({ currentDoc: doc, isDirty: true }),
-  setEditMode: (mode) => set({ editMode: mode }),
-  markDirty: () => set({ isDirty: true }),
-  markClean: () => set({ isDirty: false }),
-  clearDoc: () =>
-    set({ currentDoc: "", currentFilePath: null, isDirty: false }),
-}));
+export const useEditorStore = create<EditorState>()(
+  persist(
+    (set) => ({
+      currentDoc: "",
+      currentFilePath: null,
+      editMode: "wysiwyg",
+      isDirty: false,
+      setCurrentDoc: (doc, path) =>
+        set({ currentDoc: doc, currentFilePath: path, isDirty: false }),
+      updateDoc: (doc) => set({ currentDoc: doc, isDirty: true }),
+      setEditMode: (mode) => set({ editMode: mode }),
+      markDirty: () => set({ isDirty: true }),
+      markClean: () => set({ isDirty: false }),
+      clearDoc: () =>
+        set({ currentDoc: "", currentFilePath: null, isDirty: false }),
+    }),
+    {
+      name: "bottle-editor",
+      partialize: (state) => ({ editMode: state.editMode }),
+    },
+  ),
+);

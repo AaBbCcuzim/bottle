@@ -136,7 +136,8 @@ export function Editor() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full overflow-auto"
+      className="editor-content w-full h-full overflow-auto"
+      style={{ padding: "var(--md-padding, 32px)" }}
       data-edit-mode="wysiwyg"
     />
   );
