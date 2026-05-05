@@ -7,11 +7,13 @@ export interface FileEntry {
 
 export interface AppConfig {
   file_extensions: string[];
+  active_theme_id: string;
+  theme_mode: string;
 }
 
 export type EditMode = "source" | "split" | "wysiwyg";
 export type ThemeMode = "light" | "dark" | "system";
-export type ActiveModal = "outline" | "search" | "settings" | null;
+export type ActiveModal = "outline" | "search" | null;
 export type Platform = "macos" | "windows" | "linux" | "unknown";
 
 export interface SearchResult {

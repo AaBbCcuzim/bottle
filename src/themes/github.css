@@ -1,0 +1,90 @@
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.01 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.01 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.01 260);
+  --primary: oklch(0.53 0.17 257);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.98 0 260);
+  --secondary-foreground: oklch(0.21 0.01 260);
+  --muted: oklch(0.98 0 260);
+  --muted-foreground: oklch(0.50 0.01 260);
+  --accent: oklch(0.53 0.17 257);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: 0 0% 98%;
+  --border: oklch(0.91 0.01 260);
+  --input: oklch(0.91 0.01 260);
+  --ring: oklch(0.53 0.17 257 / 30%);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.98 0 260);
+  --sidebar-foreground: oklch(0.21 0.01 260);
+  --sidebar-primary: oklch(0.53 0.17 257);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.53 0.17 257 / 10%);
+  --sidebar-accent-foreground: oklch(0.53 0.17 257);
+  --sidebar-border: oklch(0.91 0.01 260);
+  --sidebar-ring: oklch(0.53 0.17 257 / 30%);
+
+  /* MD rendering */
+  --md-font-body: system-ui, -apple-system, sans-serif;
+  --md-font-heading: system-ui, -apple-system, sans-serif;
+  --md-font-code: "SF Mono", "Cascadia Code", "JetBrains Mono", monospace;
+  --md-font-size: 16px;
+  --md-line-height: 1.6;
+  --md-padding: 48px;
+  --md-max-width: 800px;
+  --md-heading-color: inherits;
+  --md-heading-weight: 600;
+  --md-code-bg: oklch(0.96 0 260);
+  --md-code-fg: inherits;
+  --md-blockquote-border: oklch(0.53 0.17 257);
+  --md-blockquote-bg: oklch(0.98 0 260);
+  --md-link-color: oklch(0.53 0.17 257);
+  --md-table-border: oklch(0.86 0.01 260);
+  --md-hr-color: oklch(0.86 0.01 260);
+}
+
+.dark {
+  --background: oklch(0.15 0.01 260);
+  --foreground: oklch(0.93 0.01 260);
+  --card: oklch(0.18 0.01 260);
+  --card-foreground: oklch(0.93 0.01 260);
+  --popover: oklch(0.18 0.01 260);
+  --popover-foreground: oklch(0.93 0.01 260);
+  --primary: oklch(0.68 0.14 257);
+  --primary-foreground: oklch(0.15 0.01 260);
+  --secondary: oklch(0.19 0.01 260);
+  --secondary-foreground: oklch(0.93 0.01 260);
+  --muted: oklch(0.19 0.01 260);
+  --muted-foreground: oklch(0.62 0.01 260);
+  --accent: oklch(0.68 0.14 257);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: 0 0% 98%;
+  --border: oklch(0.29 0.01 260);
+  --input: oklch(0.29 0.01 260);
+  --ring: oklch(0.68 0.14 257 / 30%);
+  --sidebar: oklch(0.12 0.01 260);
+  --sidebar-foreground: oklch(0.93 0.01 260);
+  --sidebar-primary: oklch(0.68 0.14 257);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.68 0.14 257 / 10%);
+  --sidebar-accent-foreground: oklch(0.68 0.14 257);
+  --sidebar-border: oklch(0.29 0.01 260);
+  --sidebar-ring: oklch(0.68 0.14 257 / 30%);
+
+  /* MD rendering */
+  --md-code-bg: oklch(0.12 0.01 260);
+  --md-blockquote-bg: oklch(0.12 0.01 260);
+  --md-blockquote-border: oklch(0.68 0.14 257);
+  --md-link-color: oklch(0.68 0.14 257);
+  --md-table-border: oklch(0.29 0.01 260);
+  --md-hr-color: oklch(0.29 0.01 260);
+}
+
+.editor-content h1:first-child {
+  margin-top: 0;
+}

@@ -1,4 +1,9 @@
 import { useMemo } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { useUiStore } from "../stores/uiStore";
 import { useEditorStore } from "../stores/editorStore";
 
@@ -31,20 +36,14 @@ export function OutlineModal() {
 
   const headings = useMemo(() => extractHeadings(currentDoc), [currentDoc]);
 
-  if (activeModal !== "outline") return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-      <div
-        className="fixed inset-0 bg-black/20"
-        onClick={() => setActiveModal(null)}
-      />
-      <div className="relative z-10 w-80 max-h-96 overflow-y-auto rounded-lg border border-border bg-background shadow-lg p-4">
-        <h2 className="text-sm font-semibold mb-3">Outline</h2>
+    <Dialog open={activeModal === "outline"} onOpenChange={(open) => { if (!open) setActiveModal(null); }}>
+      <DialogContent className="w-80">
+        <DialogTitle>Outline</DialogTitle>
         {headings.length === 0 ? (
           <p className="text-sm text-muted-foreground">No headings found</p>
         ) : (
-          <ul className="space-y-0.5">
+          <ul className="space-y-0.5 max-h-80 overflow-y-auto">
             {headings.map((h, i) => (
               <li
                 key={i}
@@ -57,7 +56,7 @@ export function OutlineModal() {
             ))}
           </ul>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

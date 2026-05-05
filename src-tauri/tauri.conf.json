@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "bottle",
   "version": "0.1.0",
-  "identifier": "com.swamer.tauri-app",
+  "identifier": "com.swamer.bottle",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",

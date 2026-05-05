@@ -17,12 +17,16 @@ pub struct FileEntry {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
     pub file_extensions: Vec<String>,
+    pub active_theme_id: String,
+    pub theme_mode: String,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             file_extensions: vec!["md".to_string()],
+            active_theme_id: "github".to_string(),
+            theme_mode: "system".to_string(),
         }
     }
 }
@@ -196,7 +200,17 @@ pub fn get_config(app: tauri::AppHandle) -> Result<AppConfig, String> {
     }
 
     let content = fs::read_to_string(&config_path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&content).map_err(|e| e.to_string())
+    let mut config: AppConfig = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+    // Migration for old configs without theme fields
+    if config.active_theme_id.is_empty() {
+        config.active_theme_id = "github".to_string();
+    }
+    if config.theme_mode.is_empty() {
+        config.theme_mode = "system".to_string();
+    }
+
+    Ok(config)
 }
 
 #[command]
