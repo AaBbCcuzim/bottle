@@ -1,6 +1,10 @@
-# Bottle
+<p align="center">
+  <img src="icon.png" alt="bottle icon" width="128" />
+</p>
 
-A cross-platform Markdown desktop editor for daily note-taking and document writing. Built with Tauri + React + Milkdown.
+<h1 align="center">bottle</h1>
+
+<p align="center">A cross-platform Markdown desktop editor for daily note-taking and document writing. Built with Tauri + React + Milkdown.</p>
 
 ## Features
 
