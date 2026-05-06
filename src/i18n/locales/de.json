@@ -15,12 +15,12 @@
     "words": "Wörter",
     "lines": "Zeilen",
     "noFileOpen": "Keine Datei geöffnet",
+    "selectFileHint": "Wählen Sie eine Datei aus der Seitenleiste",
     "fileName": "Dateiname (z.B. note.md)",
     "searchCurrent": "Aktuelle Datei durchsuchen...",
     "searchAll": "Alle Dateien durchsuchen...",
     "unsavedTitle": "Ungespeicherte Änderungen",
     "unsavedMessage": "Es gibt ungespeicherte Änderungen. Trotzdem schließen?",
-
     "menu_app": "Bottle",
     "menu_settings": "Einstellungen...",
     "menu_file": "Datei",
@@ -29,7 +29,6 @@
     "menu_edit": "Bearbeiten",
     "menu_view": "Ansicht",
     "menu_window": "Fenster",
-
     "settingsTitle": "Einstellungen",
     "appearance": "Erscheinungsbild",
     "editor": "Editor",
@@ -65,7 +64,6 @@
     "shortcutOpen": "Datei öffnen",
     "shortcutSettings": "Einstellungen öffnen",
     "shortcutSearch": "Search",
-
     "create": "Create",
     "edit": "Edit",
     "export": "Export",
@@ -81,6 +79,10 @@
     "colorPrimary": "Primary",
     "colorMuted": "Muted",
     "colorBorder": "Border",
-    "colorAccent": "Accent"
+    "colorAccent": "Accent",
+    "noFolderOpen": "Kein Ordner geöffnet",
+    "openFolderHint": "Öffnen Sie einen Ordner, um zu beginnen",
+    "emptyFolder": "Leerer Ordner",
+    "emptyFolderHint": "Keine passenden Dateien gefunden"
   }
 }

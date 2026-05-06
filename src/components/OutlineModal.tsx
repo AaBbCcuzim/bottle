@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "../components/ui/dialog";
+import { ScrollArea } from "../components/ui/scroll-area";
 import { useUiStore } from "../stores/uiStore";
 import { useEditorStore } from "../stores/editorStore";
 
@@ -43,18 +44,20 @@ export function OutlineModal() {
         {headings.length === 0 ? (
           <p className="text-sm text-muted-foreground">No headings found</p>
         ) : (
-          <ul className="space-y-0.5 max-h-80 overflow-y-auto">
-            {headings.map((h, i) => (
-              <li
-                key={i}
-                onClick={() => setActiveModal(null)}
-                className="text-sm hover:bg-muted rounded px-2 py-0.5 cursor-pointer truncate"
-                style={{ paddingLeft: `${8 + (h.level - 1) * 12}px` }}
-              >
-                {h.text}
-              </li>
-            ))}
-          </ul>
+          <ScrollArea className="max-h-80">
+            <ul className="space-y-0.5">
+              {headings.map((h, i) => (
+                <li
+                  key={i}
+                  onClick={() => setActiveModal(null)}
+                  className="text-sm hover:bg-muted rounded px-2 py-0.5 cursor-pointer truncate"
+                  style={{ paddingLeft: `${8 + (h.level - 1) * 12}px` }}
+                >
+                  {h.text}
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
         )}
       </DialogContent>
     </Dialog>

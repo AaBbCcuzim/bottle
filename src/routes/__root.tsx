@@ -5,7 +5,6 @@ import { TooltipProvider } from "../components/ui/tooltip";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Titlebar } from "../components/Titlebar";
 import { Toolbar } from "../components/Toolbar";
-import { StatusBar } from "../components/StatusBar";
 import { OutlineModal } from "../components/OutlineModal";
 import { SearchModal } from "../components/SearchModal";
 import { useUiStore } from "../stores/uiStore";
@@ -46,6 +45,7 @@ function RootLayout() {
       if (!path) return;
       const p = typeof path === "string" ? path : path;
       const content = await api.openFile(p);
+      useFileStore.getState().closeWorkspace();
       useEditorStore.getState().setCurrentDoc(content, p);
       useFileStore.getState().addRecent(p);
       router.navigate({ to: "/editor" });
@@ -189,6 +189,7 @@ function RootLayout() {
           if (!path) return;
           const p = typeof path === "string" ? path : path;
           const content = await api.openFile(p);
+          useFileStore.getState().closeWorkspace();
           useEditorStore.getState().setCurrentDoc(content, p);
           useFileStore.getState().addRecent(p);
           router.navigate({ to: "/editor" });
@@ -229,7 +230,6 @@ function RootLayout() {
         <Titlebar />
         <Toolbar />
         <Outlet />
-        <StatusBar />
       </div>
       <OutlineModal />
       <SearchModal />

@@ -15,12 +15,12 @@
     "words": "단어",
     "lines": "줄",
     "noFileOpen": "열린 파일 없음",
+    "selectFileHint": "사이드바에서 파일을 선택하세요",
     "fileName": "파일 이름 (예: note.md)",
     "searchCurrent": "현재 파일 검색...",
     "searchAll": "모든 파일 검색...",
     "unsavedTitle": "저장되지 않은 변경사항",
     "unsavedMessage": "저장되지 않은 변경사항이 있습니다. 닫으시겠습니까?",
-
     "menu_app": "Bottle",
     "menu_settings": "설정...",
     "menu_file": "파일",
@@ -29,7 +29,6 @@
     "menu_edit": "편집",
     "menu_view": "보기",
     "menu_window": "창",
-
     "settingsTitle": "설정",
     "appearance": "외관",
     "editor": "편집기",
@@ -65,7 +64,6 @@
     "shortcutOpen": "파일 열기",
     "shortcutSettings": "설정 열기",
     "shortcutSearch": "Search",
-
     "create": "Create",
     "edit": "Edit",
     "export": "Export",
@@ -81,6 +79,10 @@
     "colorPrimary": "Primary",
     "colorMuted": "Muted",
     "colorBorder": "Border",
-    "colorAccent": "Accent"
+    "colorAccent": "Accent",
+    "noFolderOpen": "폴더가 열리지 않음",
+    "openFolderHint": "폴더를 열어 시작하세요",
+    "emptyFolder": "빈 폴더",
+    "emptyFolderHint": "일치하는 파일이 없습니다"
   }
 }

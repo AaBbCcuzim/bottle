@@ -27,23 +27,7 @@
   --sidebar-accent-foreground: oklch(0.44 0.08 240);
   --sidebar-border: oklch(0.91 0.02 240);
   --sidebar-ring: oklch(0.44 0.08 240 / 30%);
-
-  --md-font-body: system-ui, -apple-system, sans-serif;
-  --md-font-heading: system-ui, -apple-system, sans-serif;
-  --md-font-code: "SF Mono", "Cascadia Code", "JetBrains Mono", monospace;
-  --md-font-size: 16px;
-  --md-line-height: 1.6;
   --md-padding: 48px;
-  --md-max-width: 800px;
-  --md-heading-color: oklch(0.38 0.06 240);
-  --md-heading-weight: 600;
-  --md-code-bg: oklch(0.94 0.02 240);
-  --md-code-fg: oklch(0.31 0.04 240);
-  --md-blockquote-border: oklch(0.56 0.03 240);
-  --md-blockquote-bg: oklch(0.94 0.02 240);
-  --md-link-color: oklch(0.44 0.08 240);
-  --md-table-border: oklch(0.86 0.02 240);
-  --md-hr-color: oklch(0.86 0.02 240);
 }
 
 .dark {
@@ -74,13 +58,32 @@
   --sidebar-accent-foreground: oklch(0.70 0.05 200);
   --sidebar-border: oklch(0.35 0.04 240);
   --sidebar-ring: oklch(0.70 0.05 200 / 30%);
+}
 
-  --md-code-bg: oklch(0.20 0.03 240);
-  --md-blockquote-bg: oklch(0.20 0.03 240);
-  --md-blockquote-border: oklch(0.60 0.03 240);
-  --md-link-color: oklch(0.70 0.05 200);
-  --md-table-border: oklch(0.35 0.04 240);
-  --md-hr-color: oklch(0.35 0.04 240);
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-bg: oklch(0.94 0.02 240);
+  --tw-prose-pre-code: var(--muted-foreground);
+  --tw-prose-quote-borders: oklch(0.44 0.08 240);
+  --tw-prose-hr: var(--border);
+  --tw-prose-td-borders: var(--border);
+  --tw-prose-th-borders: var(--border);
+}
+
+.dark .prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-bg: oklch(0.20 0.03 240);
+  --tw-prose-pre-code: var(--muted-foreground);
+  --tw-prose-quote-borders: oklch(0.44 0.08 240);
+  --tw-prose-hr: var(--border);
+  --tw-prose-td-borders: var(--border);
+  --tw-prose-th-borders: var(--border);
 }
 
 .editor-content h1:first-child {

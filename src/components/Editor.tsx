@@ -1,8 +1,7 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { Editor as MilkdownEditor, rootCtx, defaultValueCtx } from "@milkdown/kit/core";
 import { commonmark } from "@milkdown/kit/preset/commonmark";
 import { gfm } from "@milkdown/kit/preset/gfm";
-import { nord } from "@milkdown/theme-nord";
 import { clipboard } from "@milkdown/kit/plugin/clipboard";
 import { history } from "@milkdown/kit/plugin/history";
 import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
@@ -14,29 +13,40 @@ import { upload, uploadConfig } from "@milkdown/plugin-upload";
 import { useEditorStore } from "../stores/editorStore";
 import { useFileStore } from "../stores/fileStore";
 import { api } from "../api";
+import { marked } from "marked";
+import { createHighlighter } from "shiki";
+
+const THEME = "github-dark";
+const LANGS = [
+  "javascript", "typescript", "python", "rust", "html", "css",
+  "json", "yaml", "bash", "sql", "markdown", "java", "go", "c", "cpp",
+];
+
+let highlighterPromise: Promise<Awaited<ReturnType<typeof createHighlighter>>> | null = null;
+function getHighlighter() {
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighter({
+      themes: [THEME],
+      langs: LANGS,
+    });
+  }
+  return highlighterPromise;
+}
 
 export function Editor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<MilkdownEditor | null>(null);
+  const generationRef = useRef(0);
   const currentDoc = useEditorStore((s) => s.currentDoc);
   const editMode = useEditorStore((s) => s.editMode);
   const [, forceRender] = useState(0);
 
   const createEditor = useCallback(async () => {
-    if (!containerRef.current || editorRef.current) return;
+    if (!containerRef.current) return;
+    const gen = ++generationRef.current;
 
-    const parser = await createParser({
-      theme: "github-dark",
-      langs: [
-        "javascript", "typescript", "python", "rust", "html", "css",
-        "json", "yaml", "bash", "sql", "markdown", "java", "go", "c", "cpp",
-      ],
-    });
-
-    // nord is a Config function, use .config() for themes and config callbacks.
-    // All other items are MilkdownPlugin(s), use .use() for those.
-    // TypeScript casts are used where Milkdown v7's type system differs from
-    // the runtime API; the JS output is correct regardless.
+    const highlighter = await getHighlighter();
+    const parser = createParser(highlighter, { theme: THEME });
     const editor = await MilkdownEditor.make()
       .config((ctx: any) => {
         ctx.set(rootCtx, containerRef.current!);
@@ -70,7 +80,6 @@ export function Editor() {
           useEditorStore.getState().updateDoc(md);
         });
       })
-      .config(nord)
       .use(commonmark)
       .use(gfm)
       .use(history)
@@ -82,6 +91,13 @@ export function Editor() {
       .use(upload)
       .create();
 
+    // Guard against StrictMode double-mount race: if a newer generation
+    // was started while this one was being created, discard this editor.
+    if (gen !== generationRef.current) {
+      editor.destroy();
+      return;
+    }
+    editorRef.current?.destroy();
     editorRef.current = editor;
     forceRender(1);
   }, []);
@@ -101,6 +117,69 @@ export function Editor() {
     },
     [],
   );
+
+  const renderedHtml = useMemo(() => {
+    if (!currentDoc) return "";
+    return marked.parse(currentDoc, { async: false }) as string;
+  }, [currentDoc]);
+
+  const [highlightedHtml, setHighlightedHtml] = useState("");
+  const highlightGen = useRef(0);
+
+  useEffect(() => {
+    if (editMode !== "split" || !renderedHtml) {
+      setHighlightedHtml(renderedHtml);
+      return;
+    }
+    const gen = ++highlightGen.current;
+
+    Promise.all([
+      getHighlighter(),
+      import("mermaid"),
+    ]).then(([highlighter, mermaid]) => {
+      if (gen !== highlightGen.current) return;
+
+      mermaid.default.initialize({ startOnLoad: false });
+
+      const doc = new DOMParser().parseFromString(renderedHtml, "text/html");
+      const codeBlocks = doc.querySelectorAll("pre code");
+      const mermaidTasks: Promise<void>[] = [];
+      let mermaidIndex = 0;
+
+      codeBlocks.forEach((codeEl) => {
+        const pre = codeEl.closest("pre");
+        if (!pre) return;
+        const code = codeEl.textContent || "";
+        const lang =
+          [...codeEl.classList]
+            .find((c) => c.startsWith("language-"))
+            ?.replace("language-", "") || "text";
+
+        if (lang === "mermaid") {
+          const id = `mermaid-${gen}-${mermaidIndex++}`;
+          mermaidTasks.push(
+            mermaid.default.render(id, code).then(({ svg }) => {
+              pre.outerHTML = svg;
+            }).catch(() => {}),
+          );
+          return;
+        }
+
+        try {
+          const html = highlighter.codeToHtml(code, { lang, theme: THEME });
+          const temp = new DOMParser().parseFromString(html, "text/html");
+          const hl = temp.querySelector("pre");
+          if (hl) pre.replaceWith(hl);
+        } catch { /* keep original */ }
+      });
+
+      (mermaidTasks.length ? Promise.all(mermaidTasks) : Promise.resolve())
+        .then(() => {
+          if (gen !== highlightGen.current) return;
+          setHighlightedHtml(doc.body.innerHTML);
+        });
+    });
+  }, [editMode, renderedHtml]);
 
   if (editMode === "source") {
     return (
@@ -123,11 +202,10 @@ export function Editor() {
           className="w-1/2 h-full p-4 font-mono text-sm bg-muted/10 resize-none outline-none border-r border-border"
           spellCheck={false}
         />
-        <div className="w-1/2 h-full overflow-auto p-4 prose prose-sm dark:prose-invert max-w-none">
-          <pre className="whitespace-pre-wrap font-mono text-sm">
-            {currentDoc}
-          </pre>
-        </div>
+        <div
+          className="w-1/2 h-full overflow-auto p-4 prose prose-sm dark:prose-invert max-w-none"
+          dangerouslySetInnerHTML={{ __html: highlightedHtml || renderedHtml }}
+        />
       </div>
     );
   }
@@ -136,8 +214,8 @@ export function Editor() {
   return (
     <div
       ref={containerRef}
-      className="editor-content w-full h-full overflow-auto"
-      style={{ padding: "var(--md-padding, 32px)" }}
+      className="editor-content w-full h-full overflow-auto prose prose-sm dark:prose-invert max-w-none"
+      style={{ padding: "var(--md-padding, 64px)" }}
       data-edit-mode="wysiwyg"
     />
   );

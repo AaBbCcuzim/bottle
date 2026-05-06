@@ -15,12 +15,12 @@
     "words": "単語",
     "lines": "行",
     "noFileOpen": "ファイルが開かれていません",
+    "selectFileHint": "サイドバーからファイルを選択してください",
     "fileName": "ファイル名 (例: note.md)",
     "searchCurrent": "現在のファイルを検索...",
     "searchAll": "すべてのファイルを検索...",
     "unsavedTitle": "未保存の変更",
     "unsavedMessage": "保存されていない変更があります。閉じますか？",
-
     "menu_app": "Bottle",
     "menu_settings": "設定...",
     "menu_file": "ファイル",
@@ -29,7 +29,6 @@
     "menu_edit": "編集",
     "menu_view": "表示",
     "menu_window": "ウィンドウ",
-
     "settingsTitle": "設定",
     "appearance": "外観",
     "editor": "エディター",
@@ -65,7 +64,6 @@
     "shortcutOpen": "ファイルを開く",
     "shortcutSettings": "設定を開く",
     "shortcutSearch": "Search",
-
     "create": "Create",
     "edit": "Edit",
     "export": "Export",
@@ -81,6 +79,10 @@
     "colorPrimary": "Primary",
     "colorMuted": "Muted",
     "colorBorder": "Border",
-    "colorAccent": "Accent"
+    "colorAccent": "Accent",
+    "noFolderOpen": "フォルダが開かれていません",
+    "openFolderHint": "フォルダを開いて開始",
+    "emptyFolder": "空のフォルダ",
+    "emptyFolderHint": "一致するファイルが見つかりません"
   }
 }

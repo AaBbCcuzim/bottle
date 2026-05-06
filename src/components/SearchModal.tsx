@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "../components/ui/dialog";
+import { ScrollArea } from "../components/ui/scroll-area";
 import { useUiStore } from "../stores/uiStore";
 import { useEditorStore } from "../stores/editorStore";
 import { api } from "../api";
@@ -94,7 +95,8 @@ export function SearchModal() {
           placeholder={tab === "current" ? t("searchCurrent") : t("searchAll")}
           className="px-4 py-2 border-b border-border bg-transparent outline-none text-sm"
         />
-        <div className="flex-1 overflow-y-auto p-2 max-h-60">
+        <ScrollArea className="max-h-60">
+          <div className="p-2">
           {tab === "current"
             ? localResults.map((line) => (
                 <div key={line} className="px-2 py-1 text-sm hover:bg-muted rounded cursor-pointer font-mono">
@@ -111,6 +113,7 @@ export function SearchModal() {
           {query && tab === "current" && localResults.length === 0 && <p className="text-sm text-muted-foreground p-2">No matches</p>}
           {query && tab === "global" && results.length === 0 && <p className="text-sm text-muted-foreground p-2">No matches</p>}
         </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

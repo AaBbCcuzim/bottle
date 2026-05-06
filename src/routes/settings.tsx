@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "../components/
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 import { Item, ItemContent, ItemTitle, ItemDescription, ItemActions } from "../components/ui/item";
+import { ScrollArea } from "../components/ui/scroll-area";
 import {
   Sidebar,
   SidebarContent,
@@ -411,14 +412,15 @@ function SettingsPage() {
     { id: "tools", label: t("tools"), icon: <Wrench /> },
   ];
 
+  const currentFilePath = useEditorStore((s) => s.currentFilePath);
   const handleBack = () => {
-    router.navigate({ to: workspaceDir ? "/editor" : "/" });
+    router.navigate({ to: workspaceDir || currentFilePath ? "/editor" : "/" });
   };
 
   const Panel = panelMap[active];
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="flex-1 min-h-0">
       <div className="flex-1 flex overflow-hidden">
         <Sidebar collapsible="none" className="w-64 border-r border-border">
           <SidebarHeader>
@@ -455,9 +457,11 @@ function SettingsPage() {
               {categories.find((c) => c.id === active)?.label}
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
-            <Panel />
-          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-6">
+              <Panel />
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </SidebarProvider>
